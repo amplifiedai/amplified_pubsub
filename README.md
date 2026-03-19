@@ -30,11 +30,11 @@ end
 
 ## Configuration
 
-Configure the Phoenix endpoint whose PubSub server will be used:
+Configure the PubSub server name used for subscriptions and broadcasts:
 
 ```elixir
 # config/config.exs
-config :ampd_pubsub, endpoint: MyAppWeb.Endpoint
+config :ampd_pubsub, pubsub_server: :my_app
 ```
 
 ## Setup
