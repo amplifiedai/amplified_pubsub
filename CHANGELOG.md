@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-20
+
+### Added
+
+- Telemetry event `[:amplified, :pubsub, :broadcast]` emitted on every broadcast with `:topic` and `:message` metadata.
+- Explicit `telemetry` dependency (`~> 0.4 or ~> 1.0`).
+
+### Removed
+
+- Direct `Logger` calls from the library. Consuming applications can attach a telemetry handler to log broadcasts instead.
+
 ## [0.1.0] - 2026-03-18
 
 ### Added

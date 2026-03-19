@@ -1,7 +1,7 @@
 defmodule Amplified.PubSub.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/amplified/amplified_pubsub"
 
   def project do
@@ -22,7 +22,7 @@ defmodule Amplified.PubSub.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: []
     ]
   end
 
@@ -31,6 +31,7 @@ defmodule Amplified.PubSub.MixProject do
 
   defp deps do
     [
+      {:telemetry, "~> 0.4 or ~> 1.0"},
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_live_view, "~> 1.0"},
       {:recase, "~> 0.8"},

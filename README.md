@@ -161,6 +161,23 @@ defmodule MyApp.Blog.Post do
 end
 ```
 
+## Telemetry
+
+The following telemetry events are emitted:
+
+| Event | Measurements | Metadata |
+|-------|-------------|----------|
+| `[:amplified, :pubsub, :broadcast]` | `%{}` | `%{topic: String.t(), message: term()}` |
+
+Attach a handler to log, instrument, or observe broadcasts:
+
+```elixir
+:telemetry.attach("my-app-pubsub-log", [:amplified, :pubsub, :broadcast], fn
+  _event, _measurements, %{topic: topic, message: message}, _config ->
+    Logger.debug("broadcast(#{inspect(topic)}, #{inspect(message)})")
+end, nil)
+```
+
 ## Documentation
 
 Full documentation is available on [HexDocs](https://hexdocs.pm/amplified_pubsub).

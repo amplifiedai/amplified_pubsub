@@ -326,6 +326,22 @@ defmodule Amplified.PubSub do
       session ID (`"socket:<id>"`)
     * Structs via `use Amplified.PubSub` — derives channels from the
       module's last name segment and the struct's `:id` field
+
+  ## Telemetry
+
+  The following telemetry events are emitted:
+
+    * `[:amplified, :pubsub, :broadcast]` — fired on every broadcast.
+      Measurements are empty (`%{}`). Metadata contains `:topic` and
+      `:message`.
+
+  Attach a handler in your application to log broadcasts, collect metrics,
+  or perform any other observation:
+
+      :telemetry.attach("my-app-pubsub-log", [:amplified, :pubsub, :broadcast], fn
+        _event, _measurements, %{topic: topic, message: message}, _config ->
+          Logger.debug("broadcast(\#{inspect(topic)}, \#{inspect(message)})")
+      end, nil)
   '''
 
   alias Amplified.PubSub.Protocol

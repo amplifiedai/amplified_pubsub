@@ -26,6 +26,18 @@ defmodule Amplified.PubSub.BroadcastTest do
       PubSub.broadcast("test:any_term", "a plain string")
       assert_receive "a plain string"
     end
+
+    test "emits a telemetry event" do
+      ref =
+        :telemetry_test.attach_event_handlers(self(), [
+          [:amplified, :pubsub, :broadcast]
+        ])
+
+      PubSub.broadcast("test:telemetry", {:ping, :pong})
+
+      assert_receive {[:amplified, :pubsub, :broadcast], ^ref, %{},
+                      %{topic: "test:telemetry", message: {:ping, :pong}}}
+    end
   end
 
   # ---------------------------------------------------------------------------

@@ -10,7 +10,8 @@ defimpl Amplified.PubSub.Protocol, for: BitString do
 
     * `broadcast/2` — calls `Phoenix.PubSub.broadcast/3` with the
       configured PubSub server, the string as the topic, and the message.
-      Returns the message. Logs the broadcast at `:debug` level.
+      Returns the message. Emits a `[:amplified, :pubsub, :broadcast]`
+      telemetry event with `%{topic: topic, message: message}` metadata.
 
     * `channel/2` — returns the string as-is, or appends the namespace
       with a `:` separator when provided.
@@ -36,15 +37,10 @@ defimpl Amplified.PubSub.Protocol, for: BitString do
   use Amplified.PubSub, impl: true
   alias Amplified.PubSub, as: Ampd
   alias Phoenix.PubSub
-  require Logger
 
   def broadcast(topic, message) do
     PubSub.broadcast(Ampd.pubsub_server(), topic, message)
-
-    Logger.debug(
-      "broadcast(#{inspect(topic)}, #{inspect(message, limit: 5, printable_limit: 20)})"
-    )
-
+    :telemetry.execute([:amplified, :pubsub, :broadcast], %{}, %{topic: topic, message: message})
     message
   end
 
