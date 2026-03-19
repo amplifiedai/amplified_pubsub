@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Direct `Logger` calls from the library. Consuming applications can attach a telemetry handler to log broadcasts instead.
 
+### Fixed
+
+- Corrected GitHub organisation URLs
+
 ## [0.1.0] - 2026-03-18
 
 ### Added

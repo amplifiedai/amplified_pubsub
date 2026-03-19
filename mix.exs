@@ -2,7 +2,7 @@ defmodule Amplified.PubSub.MixProject do
   use Mix.Project
 
   @version "0.2.0"
-  @source_url "https://github.com/amplified/amplified_pubsub"
+  @source_url "https://github.com/amplifiedai/amplified_pubsub"
 
   def project do
     [
