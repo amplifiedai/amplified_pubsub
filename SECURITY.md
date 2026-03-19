@@ -9,7 +9,7 @@ Version | Support
 ## Reporting a Vulnerability
 
 Please report security issues privately through
-[GitHub Security Advisories](https://github.com/amplified/ampd_pubsub/security)
+[GitHub Security Advisories](https://github.com/amplified/amplified_pubsub/security)
 rather than opening a public issue.
 
 Advisories will be published on the same page once a fix is available.

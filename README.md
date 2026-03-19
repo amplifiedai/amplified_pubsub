@@ -18,12 +18,12 @@ or a raw channel string.
 
 ## Installation
 
-Add `ampd_pubsub` to your list of dependencies in `mix.exs`:
+Add `amplified_pubsub` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:ampd_pubsub, "~> 0.1.0"}
+    {:amplified_pubsub, "~> 0.1.0"}
   ]
 end
 ```
@@ -34,7 +34,7 @@ Configure the PubSub server name used for subscriptions and broadcasts:
 
 ```elixir
 # config/config.exs
-config :ampd_pubsub, pubsub_server: :my_app
+config :amplified_pubsub, pubsub_server: :my_app
 ```
 
 ## Setup
@@ -163,7 +163,7 @@ end
 
 ## Documentation
 
-Full documentation is available on [HexDocs](https://hexdocs.pm/ampd_pubsub).
+Full documentation is available on [HexDocs](https://hexdocs.pm/amplified_pubsub).
 
 ## Licence
 

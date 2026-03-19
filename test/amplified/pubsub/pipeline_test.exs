@@ -10,7 +10,7 @@ defmodule Amplified.PubSub.PipelineTest do
     test "broadcast chains through {:ok, struct} simulating Repo.insert" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "new thing"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       result = {:ok, thing} |> PubSub.broadcast(:created)
 

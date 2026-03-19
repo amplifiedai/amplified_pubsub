@@ -12,14 +12,14 @@ defmodule Amplified.PubSub.SubscribeTest do
   describe "subscribe/1 with strings" do
     test "subscribes the current process to the channel" do
       PubSub.subscribe("sub:string:test")
-      Phoenix.PubSub.broadcast(:ampd_pubsub_test, "sub:string:test", :ping)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "sub:string:test", :ping)
       assert_receive :ping
     end
 
     test "is idempotent — calling twice does not produce duplicate messages" do
       PubSub.subscribe("sub:idempotent")
       PubSub.subscribe("sub:idempotent")
-      Phoenix.PubSub.broadcast(:ampd_pubsub_test, "sub:idempotent", :ping)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "sub:idempotent", :ping)
       assert_receive :ping
       refute_receive :ping
     end
@@ -33,7 +33,7 @@ defmodule Amplified.PubSub.SubscribeTest do
     test "stops messages from arriving" do
       PubSub.subscribe("unsub:string:test")
       PubSub.unsubscribe("unsub:string:test")
-      Phoenix.PubSub.broadcast(:ampd_pubsub_test, "unsub:string:test", :ping)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "unsub:string:test", :ping)
       refute_receive :ping
     end
   end
@@ -49,7 +49,7 @@ defmodule Amplified.PubSub.SubscribeTest do
 
       assert ^thing = PubSub.subscribe(thing)
 
-      Phoenix.PubSub.broadcast(:ampd_pubsub_test, "thing:#{id}", :ping)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "thing:#{id}", :ping)
       assert_receive :ping
     end
   end
@@ -66,7 +66,7 @@ defmodule Amplified.PubSub.SubscribeTest do
       PubSub.subscribe(thing)
       assert ^thing = PubSub.unsubscribe(thing)
 
-      Phoenix.PubSub.broadcast(:ampd_pubsub_test, "thing:#{id}", :ping)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "thing:#{id}", :ping)
       refute_receive :ping
     end
   end
@@ -83,8 +83,8 @@ defmodule Amplified.PubSub.SubscribeTest do
 
       PubSub.subscribe(things)
 
-      Phoenix.PubSub.broadcast(:ampd_pubsub_test, "thing:#{id1}", :ping1)
-      Phoenix.PubSub.broadcast(:ampd_pubsub_test, "thing:#{id2}", :ping2)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "thing:#{id1}", :ping1)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "thing:#{id2}", :ping2)
       assert_receive :ping1
       assert_receive :ping2
     end

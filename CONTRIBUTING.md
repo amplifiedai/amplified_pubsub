@@ -9,7 +9,7 @@ before getting started.
 Before opening a bug report, search existing issues to avoid duplicates and
 try reproducing against the `main` branch. A good report includes:
 
-- Your Elixir, Erlang/OTP, Phoenix, LiveView, and `ampd_pubsub` versions
+- Your Elixir, Erlang/OTP, Phoenix, LiveView, and `amplified_pubsub` versions
 - Steps to reproduce the problem
 - What you expected vs what actually happened
 - A minimal code sample or test case if possible

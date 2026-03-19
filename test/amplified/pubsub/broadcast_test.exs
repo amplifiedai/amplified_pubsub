@@ -12,7 +12,7 @@ defmodule Amplified.PubSub.BroadcastTest do
 
   describe "broadcast/2 with strings" do
     test "delivers message to all subscribers on the topic" do
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "test:broadcast")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "test:broadcast")
       PubSub.broadcast("test:broadcast", {:hello, :world})
       assert_receive {:hello, :world}
     end
@@ -22,7 +22,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     end
 
     test "supports any term as message payload" do
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "test:any_term")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "test:any_term")
       PubSub.broadcast("test:any_term", "a plain string")
       assert_receive "a plain string"
     end
@@ -36,7 +36,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "wraps atom events as {event, subject}" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert ^thing = PubSub.broadcast(thing, :updated)
       assert_receive {:updated, ^thing}
@@ -45,7 +45,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "wraps string events as {event, subject}" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       PubSub.broadcast(thing, "custom_event")
       assert_receive {"custom_event", ^thing}
@@ -54,7 +54,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "broadcasts non-atom/binary events as-is (no wrapping)" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       PubSub.broadcast(thing, {:custom, "payload"})
       assert_receive {:custom, "payload"}
@@ -74,7 +74,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "wraps atom events with attrs as {event, subject, attrs}" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       PubSub.broadcast(thing, :updated, %{field: :name})
       assert_receive {:updated, ^thing, %{field: :name}}
@@ -83,7 +83,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "wraps non-atom events with attrs as {event, attrs}" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       PubSub.broadcast(thing, {:custom, "event"}, %{extra: true})
       assert_receive {{:custom, "event"}, %{extra: true}}
@@ -117,7 +117,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "unwraps, broadcasts for the subject, and re-wraps as {:ok, subject}" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert {:ok, ^thing} = PubSub.broadcast({:ok, thing}, :created)
       assert_receive {:created, ^thing}
@@ -131,7 +131,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "handles {n, list} tuples (e.g. from Repo.update_all)" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert {1, [^thing]} = PubSub.broadcast({1, [thing]}, :created)
       assert_receive {:created, ^thing}
@@ -142,7 +142,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "unwraps and broadcasts with attrs" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert {:ok, ^thing} = PubSub.broadcast({:ok, thing}, :updated, %{field: :name})
       assert_receive {:updated, ^thing, %{field: :name}}
@@ -162,7 +162,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "single-element list broadcasts directly for the item" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert [^thing] = PubSub.broadcast([thing], :updated)
       assert_receive {:updated, ^thing}
@@ -174,8 +174,8 @@ defmodule Amplified.PubSub.BroadcastTest do
       thing1 = %Thing{id: id1, name: "a"}
       thing2 = %Thing{id: id2, name: "b"}
 
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id1}")
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id2}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id1}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id2}")
 
       assert [^thing1, ^thing2] = PubSub.broadcast([thing1, thing2], :updated)
 
@@ -187,7 +187,7 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "unwraps {:ok, item} tuples and skips {:error, _} items" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       items = [{:ok, thing}, {:error, :something}]
       PubSub.broadcast(items, :created)
@@ -211,7 +211,7 @@ defmodule Amplified.PubSub.BroadcastTest do
       thing = %Thing{id: id, name: "foo"}
       stream = Stream.map([thing], & &1)
 
-      Phoenix.PubSub.subscribe(:ampd_pubsub_test, "thing:#{id}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       PubSub.broadcast(stream, :updated)
       assert_receive {:updated, ^thing}

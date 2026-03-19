@@ -25,7 +25,7 @@ defmodule Amplified.PubSub do
   Configure the PubSub server name used for subscriptions and broadcasts:
 
       # config/config.exs
-      config :ampd_pubsub, pubsub_server: :my_app
+      config :amplified_pubsub, pubsub_server: :my_app
 
   ## Setup
 
@@ -335,7 +335,7 @@ defmodule Amplified.PubSub do
 
   The server name is looked up from application config at runtime via
   `Application.fetch_env!/2`. Raises `ArgumentError` if `:pubsub_server`
-  is not configured for `:ampd_pubsub`.
+  is not configured for `:amplified_pubsub`.
 
   ## Examples
 
@@ -343,7 +343,7 @@ defmodule Amplified.PubSub do
       #=> :my_app
 
   """
-  def pubsub_server, do: Application.fetch_env!(:ampd_pubsub, :pubsub_server)
+  def pubsub_server, do: Application.fetch_env!(:amplified_pubsub, :pubsub_server)
 
   @all_funs [
     broadcast: 2,

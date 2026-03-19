@@ -2,11 +2,11 @@ defmodule Amplified.PubSub.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/amplified/ampd_pubsub"
+  @source_url "https://github.com/amplified/amplified_pubsub"
 
   def project do
     [
-      app: :ampd_pubsub,
+      app: :amplified_pubsub,
       version: @version,
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),

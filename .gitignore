@@ -5,7 +5,7 @@
 /.fetch
 erl_crash.dump
 *.ez
-ampd_pubsub-*.tar
+amplified_pubsub-*.tar
 /tmp/
 /.claude/
 /.elixir_ls/

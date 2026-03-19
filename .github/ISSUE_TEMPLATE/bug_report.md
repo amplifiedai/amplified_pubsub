@@ -12,7 +12,7 @@ assignees: ''
 * Elixir version (elixir -v):
 * Phoenix version (mix deps):
 * Phoenix LiveView version (mix deps):
-* ampd_pubsub version (mix deps):
+* amplified_pubsub version (mix deps):
 * Operating system:
 
 ### Actual behavior
