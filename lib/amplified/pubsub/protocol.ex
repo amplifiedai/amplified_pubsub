@@ -80,11 +80,17 @@ defprotocol Amplified.PubSub.Protocol do
   e.g. `"post:abc-123"`. The optional `namespace` is appended with a `:`
   separator.
   """
+  @spec channel(subject :: struct()) :: binary()
+  def channel(subject)
+
+  @doc """
+  Returns the PubSub channel name for the given subject, scoped to `namespace`.
+  """
   @spec channel(
           subject :: struct(),
           namespace :: String.t() | atom() | nil
         ) :: binary()
-  def channel(subject, namespace \\ nil)
+  def channel(subject, namespace)
 
   @doc """
   Subscribes the current process to the PubSub channel for the given subject.

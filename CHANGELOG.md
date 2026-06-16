@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-16
+
+### Fixed
+
+- Elixir 1.20 compatibility. The generated struct `channel/2` no longer trips the new type
+  checker's "redundant clause" warning in consuming applications, and
+  `Amplified.PubSub.Protocol` no longer uses a deprecated default argument in its `channel`
+  definition. No behaviour change.
+
 ## [0.2.0] - 2026-03-20
 
 ### Added
