@@ -462,18 +462,27 @@ defmodule Amplified.PubSub do
           subject
         end
 
-        # Default channel: derives from module name + struct id
+        # Default channel: derives from module name + struct id. A struct without an `:id`
+        # field falls through to `nil` and should override `channel/2` (see moduledoc).
+        #
+        # The `:id` check uses `Map.has_key?/2` (a plain call) inside a single clause rather than a
+        # `%module{id: id}` pattern or an `is_map_key/2` guard plus a `_` fallback. Each generated
+        # impl is `for:` a single struct, so the Elixir 1.20+ type checker narrows both the pattern
+        # and the guard to statically cover every value, flagging the `nil` fallback as redundant.
+        # A plain function call is opaque to the checker, keeping the `nil` branch reachable.
         def channel(subject, ns \\ nil)
 
-        def channel(%module{id: id}, ns) do
-          module
-          |> Module.split()
-          |> List.last()
-          |> Recase.to_snake()
-          |> then(&PubSub.channel("#{&1}:#{id}", ns))
+        def channel(%module{} = subject, ns) do
+          if Map.has_key?(subject, :id) do
+            module
+            |> Module.split()
+            |> List.last()
+            |> Recase.to_snake()
+            |> then(&PubSub.channel("#{&1}:#{Map.fetch!(subject, :id)}", ns))
+          else
+            nil
+          end
         end
-
-        def channel(_subject, _ns), do: nil
 
         # Default subscribe/unsubscribe: delegates via channel
         def subscribe(subject) do

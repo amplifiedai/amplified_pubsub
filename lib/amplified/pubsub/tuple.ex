@@ -63,7 +63,7 @@ defimpl Amplified.PubSub.Protocol, for: Tuple do
   def broadcast(error, _message), do: error
   def broadcast({:ok, subject}, event, attrs), do: {:ok, PubSub.broadcast(subject, event, attrs)}
   def broadcast(error, _message, _attrs), do: error
-  def channel(tuple, _ns), do: raise("No channel for #{inspect(tuple)}")
+  def channel(tuple, _ns \\ nil), do: raise("No channel for #{inspect(tuple)}")
   def subscribe(tuple), do: raise("Cannot subscribe to #{inspect(tuple)}")
   def unsubscribe(tuple), do: raise("Cannot unsubscribe from #{inspect(tuple)}")
 
