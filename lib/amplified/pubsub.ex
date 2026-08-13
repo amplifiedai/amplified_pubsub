@@ -290,7 +290,9 @@ defmodule Amplified.PubSub do
 
   When broadcasting a list with more than one item, items are grouped by
   channel and sent as a single `[{item, event}, ...]` message per channel
-  for efficiency. Streams are materialised to lists before operating.
+  for efficiency — `[{item, event, attrs}, ...]` from `broadcast/3`. Each
+  channel's message carries only the items on that channel. Streams are
+  materialised to lists before operating.
 
   ## Protocol implementations
 
@@ -585,6 +587,12 @@ defmodule Amplified.PubSub do
       |> Post.changeset(attrs)
       |> Repo.update()
       |> PubSub.broadcast(:updated, %{changed_fields: Map.keys(attrs)})
+
+  For a list, items are grouped by channel and each channel receives one
+  `[{item, event, attrs}, ...]` message covering only its own items:
+
+      PubSub.broadcast(posts, :archived, %{by: user.id})
+      # => [{post, :archived, %{by: user.id}}] per channel
   '''
   defdelegate broadcast(subject, message, attrs), to: Protocol
 

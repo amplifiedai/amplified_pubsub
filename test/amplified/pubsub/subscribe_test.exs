@@ -88,6 +88,19 @@ defmodule Amplified.PubSub.SubscribeTest do
       assert_receive :ping1
       assert_receive :ping2
     end
+
+    test "unsubscribe/1 stops each element's channel" do
+      id1 = UUID.generate()
+      id2 = UUID.generate()
+      things = [%Thing{id: id1}, %Thing{id: id2}]
+
+      PubSub.subscribe(things)
+      PubSub.unsubscribe(things)
+
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "thing:#{id1}", :ping1)
+      Phoenix.PubSub.broadcast(:amplified_pubsub_test, "thing:#{id2}", :ping2)
+      refute_receive _
+    end
   end
 
   # ---------------------------------------------------------------------------

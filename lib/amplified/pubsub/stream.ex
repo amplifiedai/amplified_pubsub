@@ -3,7 +3,7 @@ defimpl Amplified.PubSub.Protocol, for: Stream do
   Protocol implementation for streams.
 
   Materialises the stream to a list and delegates to the `List`
-  implementation. The original stream is returned from `broadcast/2`
+  implementation. The original stream is returned from `broadcast/2,3`
   (not the materialised list).
 
   Subscribing and unsubscribing to streams is not supported and will raise.
@@ -24,6 +24,11 @@ defimpl Amplified.PubSub.Protocol, for: Stream do
 
   def broadcast(stream, message) do
     stream |> Enum.to_list() |> PubSub.broadcast(message)
+    stream
+  end
+
+  def broadcast(stream, message, attrs) do
+    stream |> Enum.to_list() |> PubSub.broadcast(message, attrs)
     stream
   end
 

@@ -164,6 +164,15 @@ defmodule Amplified.PubSub.BroadcastTest do
       changeset = %Changeset{}
       assert {:error, ^changeset} = PubSub.broadcast({:error, changeset}, :updated, %{})
     end
+
+    test "handles {n, list} tuples (e.g. from Repo.update_all)" do
+      id = UUID.generate()
+      thing = %Thing{id: id, name: "foo"}
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
+
+      assert {1, [^thing]} = PubSub.broadcast({1, [thing]}, :created, %{n: 1})
+      assert_receive {:created, ^thing, %{n: 1}}
+    end
   end
 
   # ---------------------------------------------------------------------------
@@ -210,6 +219,81 @@ defmodule Amplified.PubSub.BroadcastTest do
     test "returns the original list unchanged" do
       things = [%Thing{id: UUID.generate()}, %Thing{id: UUID.generate()}]
       assert PubSub.broadcast(things, :updated) == things
+    end
+  end
+
+  describe "broadcast/3 with lists" do
+    test "single-element list broadcasts directly for the item" do
+      id = UUID.generate()
+      thing = %Thing{id: id, name: "foo"}
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
+
+      assert [^thing] = PubSub.broadcast([thing], :updated, %{changed: [:name]})
+      assert_receive {:updated, ^thing, %{changed: [:name]}}
+    end
+
+    test "multi-element list groups items by channel" do
+      id1 = UUID.generate()
+      id2 = UUID.generate()
+      thing1 = %Thing{id: id1, name: "a"}
+      thing2 = %Thing{id: id2, name: "b"}
+      attrs = %{changed: [:name]}
+
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id1}")
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id2}")
+
+      assert [^thing1, ^thing2] = PubSub.broadcast([thing1, thing2], :updated, attrs)
+
+      # Each channel receives a [{item, event, attrs}] list carrying only its own item.
+      assert_receive [{^thing1, :updated, ^attrs}]
+      assert_receive [{^thing2, :updated, ^attrs}]
+      refute_receive _
+    end
+
+    test "a subscriber is never sent another channel's items" do
+      id1 = UUID.generate()
+      id2 = UUID.generate()
+      thing1 = %Thing{id: id1, name: "a"}
+      thing2 = %Thing{id: id2, name: "b"}
+
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id1}")
+
+      PubSub.broadcast([thing1, thing2], :updated, %{})
+
+      assert_receive message
+      refute message |> inspect() |> String.contains?(id2)
+    end
+
+    test "unwraps {:ok, item} tuples and skips {:error, _} items" do
+      id = UUID.generate()
+      thing = %Thing{id: id, name: "foo"}
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
+
+      PubSub.broadcast([{:ok, thing}, {:error, :something}], :created, %{n: 1})
+
+      assert_receive [{^thing, :created, %{n: 1}}]
+    end
+
+    test "returns the original list unchanged" do
+      things = [%Thing{id: UUID.generate()}, %Thing{id: UUID.generate()}]
+      assert PubSub.broadcast(things, :updated, %{}) == things
+    end
+
+    test "empty list is a no-op" do
+      assert PubSub.broadcast([], :updated, %{}) == []
+    end
+  end
+
+  describe "broadcast/3 with streams" do
+    test "materialises the stream and broadcasts per channel" do
+      id = UUID.generate()
+      thing = %Thing{id: id, name: "foo"}
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
+
+      stream = Stream.map([thing, %Thing{id: UUID.generate()}], & &1)
+
+      assert PubSub.broadcast(stream, :updated, %{n: 1}) == stream
+      assert_receive [{^thing, :updated, %{n: 1}}]
     end
   end
 
