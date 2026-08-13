@@ -3,6 +3,7 @@ defmodule Amplified.PubSub.ChannelTest do
 
   alias Amplified.PubSub
   alias Amplified.PubSubTest.Custom
+  alias Amplified.PubSubTest.Recorder
   alias Amplified.PubSubTest.Thing
   alias Ecto.Changeset
   alias Ecto.UUID
@@ -15,6 +16,11 @@ defmodule Amplified.PubSub.ChannelTest do
     test "derives channel from the module's last segment and struct id" do
       id = UUID.generate()
       assert PubSub.channel(%Thing{id: id}) == "thing:#{id}"
+    end
+
+    test "works on a bare defstruct — the protocol doesn't require Ecto" do
+      id = UUID.generate()
+      assert PubSub.channel(%Recorder{id: id}) == "recorder:#{id}"
     end
 
     test "snake_cases multi-word module names" do

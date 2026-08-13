@@ -243,8 +243,34 @@ defmodule Amplified.PubSub do
 
   The convention is to return `{:halt, socket}` when you've handled the
   message and you don't want other lifecycle hooks to run, and
-  `{:cont, socket}` when you do. The defaults always return
-  `{:cont, socket}`, so unmatched messages fall through safely.
+  `{:cont, socket}` when you do.
+
+  > #### Overriding replaces the catch-all {: .warning}
+  >
+  > The injected defaults return `{:cont, socket}` for anything, so a schema
+  > that overrides nothing ignores every message safely. But a function you
+  > define in the `do` block **replaces** the default of that name and arity
+  > rather than adding a clause ahead of it. The moment you define one
+  > `handle_info/3`, the catch-all is gone, and an event your clauses don't
+  > match raises `FunctionClauseError` in the receiving LiveView.
+  >
+  > This is `defoverridable` behaving normally, and overriding means taking
+  > responsibility for the whole function — but the failure lands in a
+  > process far from the schema, so it's worth being deliberate about. End
+  > your handlers with a catch-all:
+  >
+  >     use Amplified.PubSub do
+  >       def handle_info(%Post{} = post, :updated, socket) do
+  >         {:halt, assign(socket, post: post)}
+  >       end
+  >
+  >       # Without this, any event other than :updated raises.
+  >       def handle_info(_post, _event, socket), do: {:cont, socket}
+  >     end
+  >
+  > The same applies to `handle_info/4`, and to `handle_info/2` — and note
+  > that the arities are independent: defining `handle_info/3` leaves the
+  > `handle_info/4` default intact, and vice versa.
 
   ## Flash messages
 

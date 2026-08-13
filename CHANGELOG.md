@@ -38,6 +38,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A handler for a **bare struct** broadcast (`broadcast(post, :archived)`) is unaffected and still
   matches `{:archived, %Post{}}`. Only broadcasts whose subject is a list or stream change.
 
+### Documentation
+
+- The moduledoc's claim that "the defaults always return `{:cont, socket}`, so unmatched messages
+  fall through safely" only held until you overrode something. A function defined in a
+  `use Amplified.PubSub do ... end` block **replaces** the default of that name and arity rather
+  than adding a clause ahead of it, so defining one `handle_info/3` removes the catch-all and an
+  unmatched event raises `FunctionClauseError` in the receiving LiveView. That is `defoverridable`
+  behaving normally and overriding means owning the whole function, but the failure lands in a
+  process far from the schema, so it is now called out with the remedy — end your handlers with a
+  catch-all. Pre-existing behaviour, unchanged; only the documentation was wrong.
+
+  Covered by `Amplified.PubSub.OverrideTest`, which also pins the fact that the arities are
+  independent: overriding `handle_info/3` leaves the `handle_info/4` default intact.
+
 ### Added
 
 - `Amplified.PubSub.EventIsolationTest`, guarding the other half of batch integrity: a batch carries
