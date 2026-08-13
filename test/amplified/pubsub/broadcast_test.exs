@@ -2,6 +2,7 @@ defmodule Amplified.PubSub.BroadcastTest do
   use ExUnit.Case, async: true
 
   alias Amplified.PubSub
+  alias Amplified.PubSubTest.Custom
   alias Amplified.PubSubTest.Thing
   alias Ecto.Changeset
   alias Ecto.UUID
@@ -146,7 +147,7 @@ defmodule Amplified.PubSub.BroadcastTest do
       Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert {1, [^thing]} = PubSub.broadcast({1, [thing]}, :created)
-      assert_receive {:created, ^thing}
+      assert_receive {:created, [^thing]}
     end
   end
 
@@ -171,7 +172,7 @@ defmodule Amplified.PubSub.BroadcastTest do
       Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert {1, [^thing]} = PubSub.broadcast({1, [thing]}, :created, %{n: 1})
-      assert_receive {:created, ^thing, %{n: 1}}
+      assert_receive {:created, [^thing], %{n: 1}}
     end
   end
 
@@ -180,13 +181,13 @@ defmodule Amplified.PubSub.BroadcastTest do
   # ---------------------------------------------------------------------------
 
   describe "broadcast/2 with lists" do
-    test "single-element list broadcasts directly for the item" do
+    test "single-element list sends the list shape, not the item shape" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
       Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert [^thing] = PubSub.broadcast([thing], :updated)
-      assert_receive {:updated, ^thing}
+      assert_receive {:updated, [^thing]}
     end
 
     test "multi-element list groups items by channel" do
@@ -200,9 +201,20 @@ defmodule Amplified.PubSub.BroadcastTest do
 
       assert [^thing1, ^thing2] = PubSub.broadcast([thing1, thing2], :updated)
 
-      # Each channel receives a [{item, event}] list
-      assert_receive [{^thing1, :updated}]
-      assert_receive [{^thing2, :updated}]
+      # Each channel receives {event, its_own_items}
+      assert_receive {:updated, [^thing1]}
+      assert_receive {:updated, [^thing2]}
+    end
+
+    test "items sharing a channel arrive in one message" do
+      shared1 = %Custom{id: UUID.generate(), name: "b2-shared"}
+      shared2 = %Custom{id: UUID.generate(), name: "b2-shared"}
+      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "custom:b2-shared")
+
+      PubSub.broadcast([shared1, shared2], :updated)
+
+      assert_receive {:updated, [^shared1, ^shared2]}
+      refute_receive _
     end
 
     test "unwraps {:ok, item} tuples and skips {:error, _} items" do
@@ -213,7 +225,7 @@ defmodule Amplified.PubSub.BroadcastTest do
       items = [{:ok, thing}, {:error, :something}]
       PubSub.broadcast(items, :created)
 
-      assert_receive [{^thing, :created}]
+      assert_receive {:created, [^thing]}
     end
 
     test "returns the original list unchanged" do
@@ -223,13 +235,13 @@ defmodule Amplified.PubSub.BroadcastTest do
   end
 
   describe "broadcast/3 with lists" do
-    test "single-element list broadcasts directly for the item" do
+    test "single-element list sends the list shape, not the item shape" do
       id = UUID.generate()
       thing = %Thing{id: id, name: "foo"}
       Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       assert [^thing] = PubSub.broadcast([thing], :updated, %{changed: [:name]})
-      assert_receive {:updated, ^thing, %{changed: [:name]}}
+      assert_receive {:updated, [^thing], %{changed: [:name]}}
     end
 
     test "multi-element list groups items by channel" do
@@ -244,24 +256,10 @@ defmodule Amplified.PubSub.BroadcastTest do
 
       assert [^thing1, ^thing2] = PubSub.broadcast([thing1, thing2], :updated, attrs)
 
-      # Each channel receives a [{item, event, attrs}] list carrying only its own item.
-      assert_receive [{^thing1, :updated, ^attrs}]
-      assert_receive [{^thing2, :updated, ^attrs}]
+      # Each channel receives {event, its_own_items, attrs}
+      assert_receive {:updated, [^thing1], ^attrs}
+      assert_receive {:updated, [^thing2], ^attrs}
       refute_receive _
-    end
-
-    test "a subscriber is never sent another channel's items" do
-      id1 = UUID.generate()
-      id2 = UUID.generate()
-      thing1 = %Thing{id: id1, name: "a"}
-      thing2 = %Thing{id: id2, name: "b"}
-
-      Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id1}")
-
-      PubSub.broadcast([thing1, thing2], :updated, %{})
-
-      assert_receive message
-      refute message |> inspect() |> String.contains?(id2)
     end
 
     test "unwraps {:ok, item} tuples and skips {:error, _} items" do
@@ -271,7 +269,7 @@ defmodule Amplified.PubSub.BroadcastTest do
 
       PubSub.broadcast([{:ok, thing}, {:error, :something}], :created, %{n: 1})
 
-      assert_receive [{^thing, :created, %{n: 1}}]
+      assert_receive {:created, [^thing], %{n: 1}}
     end
 
     test "returns the original list unchanged" do
@@ -293,7 +291,7 @@ defmodule Amplified.PubSub.BroadcastTest do
       stream = Stream.map([thing, %Thing{id: UUID.generate()}], & &1)
 
       assert PubSub.broadcast(stream, :updated, %{n: 1}) == stream
-      assert_receive [{^thing, :updated, %{n: 1}}]
+      assert_receive {:updated, [^thing], %{n: 1}}
     end
   end
 
@@ -310,7 +308,7 @@ defmodule Amplified.PubSub.BroadcastTest do
       Phoenix.PubSub.subscribe(:amplified_pubsub_test, "thing:#{id}")
 
       PubSub.broadcast(stream, :updated)
-      assert_receive {:updated, ^thing}
+      assert_receive {:updated, [^thing]}
     end
 
     test "returns the original stream struct" do

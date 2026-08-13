@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-13
+
+### Changed
+
+- **BREAKING.** List broadcasts now send `{event, items}` per channel — `{event, items, attrs}`
+  from `broadcast/3` — instead of `[{item, event}, ...]`. The subject sits where it sits for a
+  single struct, with a list in it, so a receiver reads a batch the same way it reads one item.
+
+  Batching is unchanged: items are still grouped by channel, still one message per channel, still
+  carrying only that channel's items. Only the nesting differs.
+
+  The shape also no longer varies with the number of items. Previously a one-element list was
+  special-cased and delegated to the item, so `broadcast([post], :archived)` sent
+  `{:archived, post}` while `broadcast([a, b], :archived)` sent `[{a, :archived}, {b, :archived}]`
+  — one shape or the other depending on how many rows a query happened to return. Consumers had to
+  write two handlers for one event and keep them in step. Now both send the list form.
+
+  Migration — the two handlers collapse into one, and the unwrapping goes away:
+
+      # before
+      def handle_info({:archived, %Post{} = post}, socket), do: archive([post], socket)
+
+      def handle_info([{%Post{}, :archived} | _] = list, socket),
+        do: list |> Enum.map(&elem(&1, 0)) |> archive(socket)
+
+      # after
+      def handle_info({:archived, [%Post{} | _] = posts}, socket), do: archive(posts, socket)
+
+  A handler for a **bare struct** broadcast (`broadcast(post, :archived)`) is unaffected and still
+  matches `{:archived, %Post{}}`. Only broadcasts whose subject is a list or stream change.
+
+### Documentation
+
+- The moduledoc's claim that "the defaults always return `{:cont, socket}`, so unmatched messages
+  fall through safely" only held until you overrode something. A function defined in a
+  `use Amplified.PubSub do ... end` block **replaces** the default of that name and arity rather
+  than adding a clause ahead of it, so defining one `handle_info/3` removes the catch-all and an
+  unmatched event raises `FunctionClauseError` in the receiving LiveView. That is `defoverridable`
+  behaving normally and overriding means owning the whole function, but the failure lands in a
+  process far from the schema, so it is now called out with the remedy — end your handlers with a
+  catch-all. Pre-existing behaviour, unchanged; only the documentation was wrong.
+
+  Covered by `Amplified.PubSub.OverrideTest`, which also pins the fact that the arities are
+  independent: overriding `handle_info/3` leaves the `handle_info/4` default intact.
+
+### Added
+
+- `Amplified.PubSub.EventIsolationTest`, guarding the other half of batch integrity: a batch carries
+  the event its own broadcast call was given, applied to every item in that call and to no items
+  from any other. `ChannelIsolationTest` asks whether the right *items* reached a channel; this asks
+  whether they arrived under the right *event*.
+
+  The old shape paired an event with each item, which looks like a per-item guarantee but is not
+  one — every pair drew on the same single `message` argument, so the pairing repeated one value N
+  times rather than establishing anything about any item. `{event, items}` binds that same value
+  once. Both derive the event from the scalar argument to the call, so neither can associate an item
+  with an event the caller didn't ask for. These tests exist so that a refactor threading the event
+  differently fails loudly.
+
+### Fixed
+
+- Schema-level `handle_info/3,4` now fire for batched broadcasts. The `Tuple` dispatcher unpacks
+  `{event, items}` and finds the `List` implementation, which reduces over the items calling each
+  struct's own handler — previously `List` inherited the injected pass-through for those arities,
+  so a naive move to this shape would have silently stopped per-struct handlers from running.
+- A `{:halt, socket}` from an item's handler halts the batch. `List.handle_info/2` took `elem(1)`
+  of each result and always reported `{:cont, socket}`, silently downgrading a handler that had
+  claimed the message.
+
 ## [0.2.2] - 2026-08-13
 
 ### Fixed

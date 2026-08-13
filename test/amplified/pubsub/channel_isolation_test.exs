@@ -33,8 +33,8 @@ defmodule Amplified.PubSub.ChannelIsolationTest do
 
       PubSub.broadcast([thing1, thing2], :updated)
 
-      assert messages(sub1) == [[{thing1, :updated}]]
-      assert messages(sub2) == [[{thing2, :updated}]]
+      assert messages(sub1) == [{:updated, [thing1]}]
+      assert messages(sub2) == [{:updated, [thing2]}]
     end
 
     test "items sharing a channel arrive together, and only there" do
@@ -48,8 +48,8 @@ defmodule Amplified.PubSub.ChannelIsolationTest do
       PubSub.broadcast([shared1, shared2, other], :updated)
 
       # One message, batching both items that live on this channel — and nothing from "other".
-      assert messages(shared_sub) == [[{shared1, :updated}, {shared2, :updated}]]
-      assert messages(other_sub) == [[{other, :updated}]]
+      assert messages(shared_sub) == [{:updated, [shared1, shared2]}]
+      assert messages(other_sub) == [{:updated, [other]}]
     end
 
     test "a channel with no items in the list receives nothing" do
@@ -67,7 +67,7 @@ defmodule Amplified.PubSub.ChannelIsolationTest do
 
       PubSub.broadcast([{:ok, thing}, {:error, :nope}], :created)
 
-      assert messages(sub) == [[{thing, :created}]]
+      assert messages(sub) == [{:created, [thing]}]
     end
   end
 
@@ -82,8 +82,8 @@ defmodule Amplified.PubSub.ChannelIsolationTest do
 
       PubSub.broadcast([thing1, thing2], :updated, attrs)
 
-      assert messages(sub1) == [[{thing1, :updated, attrs}]]
-      assert messages(sub2) == [[{thing2, :updated, attrs}]]
+      assert messages(sub1) == [{:updated, [thing1], attrs}]
+      assert messages(sub2) == [{:updated, [thing2], attrs}]
     end
 
     test "items sharing a channel arrive together, and only there" do
@@ -97,8 +97,8 @@ defmodule Amplified.PubSub.ChannelIsolationTest do
 
       PubSub.broadcast([shared1, shared2, other], :updated, attrs)
 
-      assert messages(shared_sub) == [[{shared1, :updated, attrs}, {shared2, :updated, attrs}]]
-      assert messages(other_sub) == [[{other, :updated, attrs}]]
+      assert messages(shared_sub) == [{:updated, [shared1, shared2], attrs}]
+      assert messages(other_sub) == [{:updated, [other], attrs}]
     end
 
     test "a channel with no items in the list receives nothing" do
@@ -120,8 +120,8 @@ defmodule Amplified.PubSub.ChannelIsolationTest do
 
       PubSub.broadcast(Stream.map([thing1, thing2], & &1), :archived, %{})
 
-      assert messages(sub1) == [[{thing1, :archived, %{}}]]
-      assert messages(sub2) == [[{thing2, :archived, %{}}]]
+      assert messages(sub1) == [{:archived, [thing1], %{}}]
+      assert messages(sub2) == [{:archived, [thing2], %{}}]
     end
   end
 
