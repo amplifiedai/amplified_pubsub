@@ -62,6 +62,10 @@ defimpl Amplified.PubSub.Protocol, for: Tuple do
   def broadcast({n, list}, event) when is_list(list), do: {n, PubSub.broadcast(list, event)}
   def broadcast(error, _message), do: error
   def broadcast({:ok, subject}, event, attrs), do: {:ok, PubSub.broadcast(subject, event, attrs)}
+
+  def broadcast({n, list}, event, attrs) when is_list(list),
+    do: {n, PubSub.broadcast(list, event, attrs)}
+
   def broadcast(error, _message, _attrs), do: error
   def channel(tuple, _ns \\ nil), do: raise("No channel for #{inspect(tuple)}")
   def subscribe(tuple), do: raise("Cannot subscribe to #{inspect(tuple)}")

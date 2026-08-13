@@ -45,4 +45,29 @@ defmodule Amplified.PubSub.HandleInfoTest do
       assert {:cont, ^socket} = PubSub.handle_info({:a, :b, :c, :d}, socket)
     end
   end
+
+  describe "handle_info/2 — List dispatcher" do
+    test "dispatches {struct, message} entries to handle_info/3" do
+      handled = %Handled{id: UUID.generate(), name: "test"}
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:cont, socket} = PubSub.handle_info([{handled, :updated}], socket)
+      assert socket.assigns.handled == handled
+    end
+
+    test "dispatches {struct, message, attrs} entries to handle_info/4" do
+      handled = %Handled{id: UUID.generate(), name: "test"}
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:cont, socket} =
+               PubSub.handle_info([{handled, :updated, %{changed: [:name]}}], socket)
+
+      assert socket.assigns.changed == [:name]
+    end
+
+    test "passes through a list this library did not send, rather than crashing" do
+      socket = %Phoenix.LiveView.Socket{}
+      assert {:cont, ^socket} = PubSub.handle_info([:some, "unrelated", 42], socket)
+    end
+  end
 end
