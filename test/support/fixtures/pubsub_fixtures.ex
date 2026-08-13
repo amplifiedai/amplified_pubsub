@@ -46,3 +46,31 @@ defmodule Amplified.PubSubTest.Handled do
     end
   end
 end
+
+defmodule Amplified.PubSubTest.Recorder do
+  @moduledoc """
+  A test struct that records every `{id, event}` pair dispatched to it, in order, so a test can
+  assert exactly which event reached which item rather than inferring it from a handler that
+  matches only one event.
+  """
+  use Ecto.Schema
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  schema "recorders" do
+    field :name, :string
+  end
+
+  use Amplified.PubSub do
+    def handle_info(%Recorder{id: id}, event, socket), do: record(socket, {id, event})
+
+    def handle_info(%Recorder{id: id}, event, attrs, socket),
+      do: record(socket, {id, event, attrs})
+
+    defp record(socket, entry) do
+      socket
+      |> Map.fetch!(:assigns)
+      |> Map.get(:seen, [])
+      |> then(&{:cont, assign(socket, :seen, &1 ++ [entry])})
+    end
+  end
+end

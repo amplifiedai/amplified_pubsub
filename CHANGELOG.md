@@ -38,6 +38,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A handler for a **bare struct** broadcast (`broadcast(post, :archived)`) is unaffected and still
   matches `{:archived, %Post{}}`. Only broadcasts whose subject is a list or stream change.
 
+### Added
+
+- `Amplified.PubSub.EventIsolationTest`, guarding the other half of batch integrity: a batch carries
+  the event its own broadcast call was given, applied to every item in that call and to no items
+  from any other. `ChannelIsolationTest` asks whether the right *items* reached a channel; this asks
+  whether they arrived under the right *event*.
+
+  The old shape paired an event with each item, which looks like a per-item guarantee but is not
+  one — every pair drew on the same single `message` argument, so the pairing repeated one value N
+  times rather than establishing anything about any item. `{event, items}` binds that same value
+  once. Both derive the event from the scalar argument to the call, so neither can associate an item
+  with an event the caller didn't ask for. These tests exist so that a refactor threading the event
+  differently fails loudly.
+
 ### Fixed
 
 - Schema-level `handle_info/3,4` now fire for batched broadcasts. The `Tuple` dispatcher unpacks
