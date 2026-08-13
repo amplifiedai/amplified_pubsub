@@ -46,12 +46,63 @@ defmodule Amplified.PubSub.HandleInfoTest do
     end
   end
 
-  describe "handle_info/2 — List dispatcher" do
+  describe "handle_info/2 — batched {event, items} messages" do
+    test "dispatches each item to its own handle_info/3" do
+      handled = %Handled{id: UUID.generate(), name: "test"}
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:halt, socket} = PubSub.handle_info({:updated, [handled]}, socket)
+      assert socket.assigns.handled == handled
+    end
+
+    test "dispatches each item to its own handle_info/4" do
+      handled = %Handled{id: UUID.generate(), name: "test"}
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:halt, socket} =
+               PubSub.handle_info({:updated, [handled], %{changed: [:name]}}, socket)
+
+      assert socket.assigns.changed == [:name]
+    end
+
+    test "threads the socket through every item in the batch" do
+      first = %Handled{id: UUID.generate(), name: "first"}
+      last = %Handled{id: UUID.generate(), name: "last"}
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:halt, socket} = PubSub.handle_info({:updated, [first, last]}, socket)
+      assert socket.assigns.handled == last
+    end
+
+    test "returns {:cont, socket} when no item's handler claims the message" do
+      things = [%Thing{id: UUID.generate()}, %Thing{id: UUID.generate()}]
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:cont, ^socket} = PubSub.handle_info({:created, things}, socket)
+    end
+
+    test "halts when any item's handler halts, even among items that don't" do
+      handled = %Handled{id: UUID.generate(), name: "test"}
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:halt, socket} =
+               PubSub.handle_info({:updated, [%Thing{id: UUID.generate()}, handled]}, socket)
+
+      assert socket.assigns.handled == handled
+    end
+
+    test "an empty batch is a pass-through" do
+      socket = %Phoenix.LiveView.Socket{}
+      assert {:cont, ^socket} = PubSub.handle_info({:updated, []}, socket)
+    end
+  end
+
+  describe "handle_info/2 — bare list messages" do
     test "dispatches {struct, message} entries to handle_info/3" do
       handled = %Handled{id: UUID.generate(), name: "test"}
       socket = %Phoenix.LiveView.Socket{}
 
-      assert {:cont, socket} = PubSub.handle_info([{handled, :updated}], socket)
+      assert {:halt, socket} = PubSub.handle_info([{handled, :updated}], socket)
       assert socket.assigns.handled == handled
     end
 
@@ -59,7 +110,7 @@ defmodule Amplified.PubSub.HandleInfoTest do
       handled = %Handled{id: UUID.generate(), name: "test"}
       socket = %Phoenix.LiveView.Socket{}
 
-      assert {:cont, socket} =
+      assert {:halt, socket} =
                PubSub.handle_info([{handled, :updated, %{changed: [:name]}}], socket)
 
       assert socket.assigns.changed == [:name]

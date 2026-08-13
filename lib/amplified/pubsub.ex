@@ -283,16 +283,19 @@ defmodule Amplified.PubSub do
 
   ## Lists and streams
 
-  Broadcasting or subscribing to a list operates on each item individually:
+  Subscribing to a list operates on each item individually; broadcasting
+  batches by channel:
 
-      PubSub.subscribe(posts)           # subscribes to each post's channel
-      PubSub.broadcast(posts, :archived) # broadcasts for each post
+      PubSub.subscribe(posts)            # subscribes to each post's channel
+      PubSub.broadcast(posts, :archived) # one message per channel
 
-  When broadcasting a list with more than one item, items are grouped by
-  channel and sent as a single `[{item, event}, ...]` message per channel
-  for efficiency — `[{item, event, attrs}, ...]` from `broadcast/3`. Each
-  channel's message carries only the items on that channel. Streams are
-  materialised to lists before operating.
+  When broadcasting a list, items are grouped by channel and sent as a
+  single `{event, items}` message per channel for efficiency —
+  `{event, items, attrs}` from `broadcast/3`. Each channel's message carries
+  only the items on that channel, and the shape is the same one a single
+  struct produces with a list in the subject position, so a one-element list
+  sends `{event, [item]}`. Streams are materialised to lists before
+  operating.
 
   ## Protocol implementations
 
@@ -305,8 +308,8 @@ defmodule Amplified.PubSub do
     * `Tuple` — unwraps `{:ok, subject}` for broadcast/subscribe; passes
       `{:error, _}` through unchanged; dispatches `{action, subject}`
       messages in `handle_info`
-    * `List` — maps the operation across each element, grouping multi-item
-      broadcasts by channel
+    * `List` — maps the operation across each element, grouping broadcasts
+      by channel and sending one `{event, items}` message per channel
     * `Stream` — materialises to a list, then delegates to the List
       implementation
     * `Phoenix.LiveView.Socket` — derives a channel from the socket's
@@ -536,8 +539,9 @@ defmodule Amplified.PubSub do
     * **String** — treats it as a literal channel name and broadcasts the
       message directly. Returns the message.
 
-    * **List** — broadcasts for each item (grouped by channel when there
-      are multiple items). Returns the list.
+    * **List** — groups items by channel and sends one `{event, items}`
+      message per channel, carrying only that channel's items. Returns the
+      list.
 
     * **Atom** — no-op; returns the message unchanged.
 
@@ -565,7 +569,7 @@ defmodule Amplified.PubSub do
   Broadcast for a list of subjects:
 
       PubSub.broadcast(posts, :archived)
-      # => broadcasts :archived for each post, returns posts
+      # => sends {:archived, posts_on_that_channel} per channel, returns posts
   '''
   defdelegate broadcast(subject, message), to: Protocol
 
@@ -589,10 +593,10 @@ defmodule Amplified.PubSub do
       |> PubSub.broadcast(:updated, %{changed_fields: Map.keys(attrs)})
 
   For a list, items are grouped by channel and each channel receives one
-  `[{item, event, attrs}, ...]` message covering only its own items:
+  `{event, items, attrs}` message covering only its own items:
 
       PubSub.broadcast(posts, :archived, %{by: user.id})
-      # => [{post, :archived, %{by: user.id}}] per channel
+      # => {:archived, posts_on_that_channel, %{by: user.id}}
   '''
   defdelegate broadcast(subject, message, attrs), to: Protocol
 

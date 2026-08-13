@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-13
+
+### Changed
+
+- **BREAKING.** List broadcasts now send `{event, items}` per channel — `{event, items, attrs}`
+  from `broadcast/3` — instead of `[{item, event}, ...]`. The subject sits where it sits for a
+  single struct, with a list in it, so a receiver reads a batch the same way it reads one item.
+
+  Batching is unchanged: items are still grouped by channel, still one message per channel, still
+  carrying only that channel's items. Only the nesting differs.
+
+  The shape also no longer varies with the number of items. Previously a one-element list was
+  special-cased and delegated to the item, so `broadcast([post], :archived)` sent
+  `{:archived, post}` while `broadcast([a, b], :archived)` sent `[{a, :archived}, {b, :archived}]`
+  — one shape or the other depending on how many rows a query happened to return. Consumers had to
+  write two handlers for one event and keep them in step. Now both send the list form.
+
+  Migration — the two handlers collapse into one, and the unwrapping goes away:
+
+      # before
+      def handle_info({:archived, %Post{} = post}, socket), do: archive([post], socket)
+
+      def handle_info([{%Post{}, :archived} | _] = list, socket),
+        do: list |> Enum.map(&elem(&1, 0)) |> archive(socket)
+
+      # after
+      def handle_info({:archived, [%Post{} | _] = posts}, socket), do: archive(posts, socket)
+
+  A handler for a **bare struct** broadcast (`broadcast(post, :archived)`) is unaffected and still
+  matches `{:archived, %Post{}}`. Only broadcasts whose subject is a list or stream change.
+
+### Fixed
+
+- Schema-level `handle_info/3,4` now fire for batched broadcasts. The `Tuple` dispatcher unpacks
+  `{event, items}` and finds the `List` implementation, which reduces over the items calling each
+  struct's own handler — previously `List` inherited the injected pass-through for those arities,
+  so a naive move to this shape would have silently stopped per-struct handlers from running.
+- A `{:halt, socket}` from an item's handler halts the batch. `List.handle_info/2` took `elem(1)`
+  of each result and always reported `{:cont, socket}`, silently downgrading a handler that had
+  claimed the message.
+
 ## [0.2.2] - 2026-08-13
 
 ### Fixed
