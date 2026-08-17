@@ -43,6 +43,12 @@ defimpl Amplified.PubSub.Protocol, for: List do
   single structs. If any item's handler returns `{:halt, socket}`, the batch
   halts.
 
+  Items with no protocol implementation are skipped. A LiveView sends itself
+  plenty of `{action, list}` messages this library knows nothing about, and
+  the dispatcher typically runs as a `handle_info` hook — ahead of the
+  LiveView's own callback. Skipping is what lets those messages reach the
+  handler that wants them.
+
   `handle_info/2` handles a bare list message — one this implementation
   didn't send, but that a caller can still produce with
   `broadcast("some:channel", [a, b])`. Entries shaped `{struct, message}` or
@@ -119,9 +125,15 @@ defimpl Amplified.PubSub.Protocol, for: List do
 
   # Threads the socket through every item and reports `:halt` if any handler claimed the message,
   # so a batch halts on the same terms a single struct would.
+  #
+  # Items with no implementation are skipped. The `Tuple` dispatcher guards `{action, subject}` on
+  # `impl_for(subject)`, but a list *always* has one — the guard clears the container and says
+  # nothing about its contents, so the check has to happen again here, per item.
   defp dispatch_each(list, socket, dispatch) do
     Enum.reduce(list, {:cont, socket}, fn item, {flow, socket} ->
-      item |> dispatch.(socket) |> merge_flow(flow)
+      if PubSub.impl_for(item),
+        do: item |> dispatch.(socket) |> merge_flow(flow),
+        else: {flow, socket}
     end)
   end
 

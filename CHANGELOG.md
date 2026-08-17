@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-17
+
+### Fixed
+
+- `handle_info` no longer raises `Protocol.UndefinedError` on a `{event, items}` message whose items
+  have no protocol implementation. Items without one are now skipped.
+
+  The `Tuple` dispatcher guards `{event, subject}` on `impl_for(subject)`, but a list always has an
+  implementation — so the guard cleared the container and said nothing about its contents. `List`
+  then fanned out to every item unguarded. Any `{event, [%NotASubject{}, ...]}` message raised.
+
+  This reached applications through their own messages, not through broadcasts. A LiveView sending
+  itself `{:saved, [%SomeResult{}, ...]}` from a component was enough, and because the dispatcher is
+  usually attached as a `handle_info` hook, it raised *ahead* of the LiveView's own callback — the
+  handler written for the message never got to run.
+
+  Introduced in 0.3.0 along with `List.handle_info/3,4`; releases before that had no `List`
+  `handle_info/3`, so these messages fell through untouched.
+
 ## [0.3.0] - 2026-08-13
 
 ### Changed
