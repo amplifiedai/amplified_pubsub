@@ -74,6 +74,18 @@ defmodule Amplified.PubSubTest.Recorder do
   end
 end
 
+defmodule Amplified.PubSubTest.Foreign do
+  @moduledoc """
+  A test struct with no protocol implementation whatsoever — it does not `use Amplified.PubSub` and
+  has no `defimpl`. It stands for the structs an application sends itself in its own messages and
+  never broadcasts: a form result, a wizard's output, a job summary.
+
+  Every other fixture here is a subject. This one exists to be a non-subject, because the dispatcher
+  has to survive meeting one.
+  """
+  defstruct [:id]
+end
+
 defmodule Amplified.PubSubTest.Partial do
   @moduledoc """
   A test struct that overrides `handle_info/3` for a single event and supplies no catch-all, which

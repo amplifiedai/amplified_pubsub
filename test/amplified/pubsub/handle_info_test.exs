@@ -2,6 +2,7 @@ defmodule Amplified.PubSub.HandleInfoTest do
   use ExUnit.Case, async: true
 
   alias Amplified.PubSub
+  alias Amplified.PubSubTest.Foreign
   alias Amplified.PubSubTest.Handled
   alias Amplified.PubSubTest.Thing
   alias Ecto.UUID
@@ -95,6 +96,35 @@ defmodule Amplified.PubSub.HandleInfoTest do
       socket = %Phoenix.LiveView.Socket{}
       assert {:cont, ^socket} = PubSub.handle_info({:updated, []}, socket)
     end
+
+    # The Tuple dispatcher guards `{action, subject}` on `impl_for(subject)`, but a list always has
+    # an implementation — so the guard clears the container and says nothing about its contents.
+    # These messages are an application's own, and this dispatcher usually runs as a hook ahead of
+    # the LiveView's `handle_info/2`, so raising here means raising before the handler that wanted
+    # them.
+    test "passes a list of structs with no implementation through, rather than crashing" do
+      foreign = [%Foreign{id: UUID.generate()}, %Foreign{id: UUID.generate()}]
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:cont, ^socket} = PubSub.handle_info({:upload, foreign}, socket)
+    end
+
+    test "passes a list of structs with no implementation through handle_info/4 too" do
+      foreign = [%Foreign{id: UUID.generate()}]
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:cont, ^socket} = PubSub.handle_info({:upload, foreign, %{done: true}}, socket)
+    end
+
+    test "dispatches the items it knows and skips the ones it doesn't, in one batch" do
+      handled = %Handled{id: UUID.generate(), name: "test"}
+      socket = %Phoenix.LiveView.Socket{}
+
+      assert {:halt, socket} =
+               PubSub.handle_info({:updated, [%Foreign{id: UUID.generate()}, handled]}, socket)
+
+      assert socket.assigns.handled == handled
+    end
   end
 
   describe "handle_info/2 — bare list messages" do
@@ -119,6 +149,11 @@ defmodule Amplified.PubSub.HandleInfoTest do
     test "passes through a list this library did not send, rather than crashing" do
       socket = %Phoenix.LiveView.Socket{}
       assert {:cont, ^socket} = PubSub.handle_info([:some, "unrelated", 42], socket)
+    end
+
+    test "passes through entries whose struct has no implementation" do
+      socket = %Phoenix.LiveView.Socket{}
+      assert {:cont, ^socket} = PubSub.handle_info([%Foreign{id: UUID.generate()}], socket)
     end
   end
 end
